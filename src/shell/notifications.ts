@@ -32,6 +32,7 @@ import {
   getMessageTrayContainer,
   hideBannerAppTitleRow,
   resolveNotificationWidgets,
+  setNotificationBodyHidden,
 } from "./notification-widgets.js";
 
 const ANIMATION_TIME = 200;
@@ -241,6 +242,15 @@ export class NotificationsManager {
       if (!widgets) return;
 
       const { sourceName, titleText, bodyText } = widgets;
+      const configuration = settingsManager.getConfigurationFor(
+        sourceName,
+        titleText,
+        bodyText,
+      );
+      setNotificationBodyHidden(
+        widgets,
+        configuration.enabled && configuration.content.hideBody,
+      );
 
       const position = settingsManager.getPositionFor(
         sourceName,
@@ -301,6 +311,8 @@ export class NotificationsManager {
   dispose() {
     this.soundManager.dispose();
     this.notificationStack.dispose();
+    const widgets = resolveNotificationWidgets(getMessageTrayContainer());
+    if (widgets) setNotificationBodyHidden(widgets, false);
     this.disable();
     this.injectionManager.clear();
 
