@@ -32,6 +32,7 @@ import {
   getMessageTrayContainer,
   hideBannerAppTitleRow,
   resolveNotificationWidgets,
+  restoreNotificationBody,
   setNotificationBodyHidden,
 } from "./notification-widgets.js";
 
@@ -358,7 +359,7 @@ export class NotificationsManager {
     this.soundManager.dispose();
     this.notificationStack.dispose();
     const widgets = resolveNotificationWidgets(getMessageTrayContainer());
-    if (widgets) setNotificationBodyHidden(widgets, false);
+    if (widgets) restoreNotificationBody(widgets);
     this.disable();
     this.injectionManager.clear();
 

@@ -22,7 +22,7 @@ export type NotificationWidgets = {
 
 const hiddenBodies = new WeakMap<
   St.Bin,
-  { visible: boolean; signal: number }
+  { visible: boolean; signal: number | null }
 >();
 const hiddenHeaders = new WeakSet<Clutter.Actor>();
 const resolvedWidgets = new WeakMap<St.Widget, NotificationWidgets>();
@@ -138,20 +138,28 @@ export function setNotificationBodyHidden(
   if (!body) return;
   const previous = hiddenBodies.get(body);
   if (hidden) {
-    if (previous) return;
-    const state = {
-      visible: body.visible,
-      signal: body.connect("notify::visible", () => {
-        if (!body.visible) return;
-        state.visible = true;
-        body.hide();
-      }),
-    };
+    if (previous?.signal != null) return;
+    const state = previous ?? { visible: body.visible, signal: null };
+    state.signal = body.connect("notify::visible", () => {
+      if (!body.visible) return;
+      state.visible = true;
+      body.hide();
+    });
     hiddenBodies.set(body, state);
     body.hide();
   } else if (previous) {
-    body.disconnect(previous.signal);
-    hiddenBodies.delete(body);
+    if (previous.signal !== null) body.disconnect(previous.signal);
+    previous.signal = null;
     body.visible = previous.visible && current.bodyText.length > 0;
   }
+}
+
+export function restoreNotificationBody(widgets: NotificationWidgets) {
+  const body = widgets.body;
+  if (!body) return;
+  const previous = hiddenBodies.get(body);
+  if (!previous) return;
+  if (previous.signal !== null) body.disconnect(previous.signal);
+  hiddenBodies.delete(body);
+  body.visible = previous.visible;
 }
